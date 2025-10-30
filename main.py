@@ -12,7 +12,7 @@ def extract_image_and_title(url):
     r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
     soup = BeautifulSoup(r.text, "html.parser")
 
-    # Title
+    # Merr titullin
     title = None
     title_meta = soup.find("meta", property="og:title")
     if title_meta and title_meta.get("content"):
@@ -20,7 +20,7 @@ def extract_image_and_title(url):
     else:
         title = soup.find("title").text if soup.find("title") else "Lajm"
 
-    # Image fallback chain
+    # Rrjedha për imazhe
     img_url = None
 
     og_img = soup.find("meta", property="og:image")
@@ -37,7 +37,7 @@ def extract_image_and_title(url):
         if img_tag and img_tag.get("src"):
             img_url = img_tag["src"]
 
-    # Fix relative URLs
+    # Rregullo URL relative
     if img_url:
         if img_url.startswith("//"):
             img_url = "https:" + img_url
@@ -48,19 +48,35 @@ def extract_image_and_title(url):
     return title, img_url
 
 def generate_image(title, img_url):
+    # Merr imazhin
     img_data = requests.get(img_url).content
     img = Image.open(BytesIO(img_data)).convert("RGB").resize((900, 600))
 
+    # Krijo canvas më të madh për titull
     canvas = Image.new("RGB", (900, 1200), (150, 30, 30))
     canvas.paste(img, (0, 0))
 
     draw = ImageDraw.Draw(canvas)
-    font = ImageFont.load_default()
 
-    # Text wrap simple
-    wrapped_title = "\n".join([title[i:i+30].upper() for i in range(0, len(title), 30)])
+    # Ngarko font të madh
+    try:
+        font = ImageFont.truetype("arial.ttf", 40)  # mund të ndryshosh font-in
+    except:
+        font = ImageFont.load_default()
 
-    draw.text((20, 650), wrapped_title, font=font, fill="white")
+    # Tekst i wrap-uar
+    import textwrap
+    wrapper = textwrap.TextWrapper(width=25)
+    wrapped_title = "\n".join(wrapper.wrap(title.upper()))
+
+    # Pozicioni i tekstit
+    text_x = 20
+    text_y = 650
+
+    # Vendos tekst me outline për qartësi
+    for offset in [(1,1), (-1,-1), (1,-1), (-1,1)]:
+        draw.text((text_x + offset[0], text_y + offset[1]), wrapped_title, font=font, fill="black")
+    draw.text((text_x, text_y), wrapped_title, font=font, fill="white")
 
     buf = BytesIO()
     canvas.save(buf, format="JPEG")
